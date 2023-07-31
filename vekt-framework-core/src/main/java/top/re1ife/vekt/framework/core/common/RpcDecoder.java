@@ -8,6 +8,9 @@ import java.util.List;
 
 import static top.re1ife.vekt.framework.core.common.constants.RpcConstants.MAGIC_NUMBER;
 
+/**
+ * RPC 解码器 所有数据都入站要过解码器
+ */
 public class RpcDecoder extends ByteToMessageDecoder {
 
     /**
@@ -43,6 +46,7 @@ public class RpcDecoder extends ByteToMessageDecoder {
                 return;
             }
 
+            //这里其实就是实际的RpcProtocol对象的content字段
             byte[] data = new byte[contentLength];
             byteBuf.readBytes(data);
             RpcProtocol rpcProtocol = new RpcProtocol(data);

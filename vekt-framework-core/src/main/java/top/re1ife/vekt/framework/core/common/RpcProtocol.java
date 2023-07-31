@@ -1,5 +1,8 @@
 package top.re1ife.vekt.framework.core.common;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import top.re1ife.vekt.framework.core.common.constants.RpcConstants;
 
 import java.io.Serializable;
@@ -8,6 +11,9 @@ import java.util.Arrays;
 /**
  * 自定义序列化协议
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class RpcProtocol implements Serializable {
     private static final long serialVersionUID = 8036047420171733802L;
 
