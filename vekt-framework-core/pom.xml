@@ -15,12 +15,14 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <netty.version>4.1.75.Final</netty.version>
         <javassist.version>3.21.0-GA</javassist.version>
         <fastjson2.version>2.0.20</fastjson2.version>
         <jboss-marshalling-river.version>1.4.11.Final</jboss-marshalling-river.version>
         <jboss-marshalling-serial.version>1.4.11.Final</jboss-marshalling-serial.version>
-        <slf4j-api.version>1.7.13</slf4j-api.version>
+        <slf4j-api.version>2.0.1</slf4j-api.version>
+        <logback.classic.version>1.4.2</logback.classic.version>
         <lombok.version>1.18.24</lombok.version>
     </properties>
 
@@ -42,6 +44,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.classic.version}</version>
         </dependency>
 
         <dependency>
