@@ -1,6 +1,5 @@
 package top.re1ife.vekt.framework.core.client;
 
-import top.re1ife.vekt.framework.core.common.RpcProtocol;
 import top.re1ife.vekt.framework.core.proxy.ProxyFactory;
 
 /**

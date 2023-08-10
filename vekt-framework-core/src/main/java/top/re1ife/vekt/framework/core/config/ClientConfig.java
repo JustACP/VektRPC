@@ -9,10 +9,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ClientConfig {
 
+    private String registerAddr;
 
-    private Integer port;
+    private String applicationName;
 
-    private String serverAddr;
+
+    private String proxyType;
+
+    private long callTimeout = 3000;
 
 
 

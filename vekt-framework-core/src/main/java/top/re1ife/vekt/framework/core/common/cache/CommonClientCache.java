@@ -1,9 +1,10 @@
 package top.re1ife.vekt.framework.core.common.cache;
 
+import com.alibaba.nacos.api.naming.listener.EventListener;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.config.ClientConfig;
-import top.re1ife.vekt.framework.core.registery.URL;
+import top.re1ife.vekt.framework.core.registry.URL;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -19,19 +20,18 @@ public class CommonClientCache {
 
     public static Map<String, Object> RESP_MAP = new ConcurrentHashMap<>();
 
-
-    /**
-     * Provider 名称  该服务有哪些集群URL
-     */
     public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
+
+    public static Map<String, EventListener> SERVICE_LISTENER = new ConcurrentHashMap<>();
 
     public static ClientConfig CLIENT_CONFIG;
 
-    public static Map<String,List<URL>> URL_MAP = new ConcurrentHashMap<>();
+    public static Map<String, List<URL>> URL_MAP = new ConcurrentHashMap<>();
 
     public static Set<String> SERVER_ADDRESS = new HashSet<>();
 
-    //调用时从这这里面选择服务提供者
-    public static Map<String, List<ChannelFutureWrapper>> CONNECT_MAP = new ConcurrentHashMap<>();
+    //每次进行远程调用的时候都是从这里面去选择服务提供者
+    public static Map<String,List<ChannelFutureWrapper>> CONNECT_MAP = new ConcurrentHashMap<>();
+
 
 }
