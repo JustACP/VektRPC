@@ -1,5 +1,6 @@
 package top.re1ife.vekt.framework.core.common.cache;
 
+import com.alibaba.nacos.api.naming.listener.EventListener;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.config.ClientConfig;
@@ -19,7 +20,9 @@ public class CommonClientCache {
 
     public static Map<String, Object> RESP_MAP = new ConcurrentHashMap<>();
 
-    public static List<String> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
+    public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
+
+    public static Map<String, EventListener> SERVICE_LISTENER = new ConcurrentHashMap<>();
 
     public static ClientConfig CLIENT_CONFIG;
 

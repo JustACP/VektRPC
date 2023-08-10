@@ -1,9 +1,9 @@
 package top.re1ife.vekt.framework.core.common.config;
 
-import org.apache.commons.lang3.StringUtils;
+
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ public class PropertiesLoader {
 
     private static Map<String, String> propertiesMap = new HashMap<>();
 
-    private static String DEFAULT_PROPERTIES_FILE = "vektrpc.properties";
+    private static String DEFAULT_PROPERTIES_FILE = "/Users/kuaiyin/IdeaProjects/VektRPC/vekt-framework-core/src/main/resources/vektrpc.properties";
 
     public static void loadConfiguration() throws IOException {
         if(properties != null){

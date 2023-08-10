@@ -22,8 +22,14 @@ public class JDKClientInvocationHandler implements InvocationHandler {
 
     private Class<?> clazz;
 
-    public JDKClientInvocationHandler(Class<?> clazz){
+    private Long timeout;
+
+    public JDKClientInvocationHandler(Class<?> clazz, Long executeTimeout){
         this.clazz = clazz;
+        if(executeTimeout == null){
+            throw new IllegalArgumentException("executeTimeout must not null and gt 0 ");
+        }
+        this.timeout = executeTimeout;
     }
 
     @Override
@@ -40,7 +46,7 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         long beginTime = System.currentTimeMillis();
 
         //客户端请求超时依据
-        while(System.currentTimeMillis() - beginTime < 3 * 1000){
+        while(System.currentTimeMillis() - beginTime < timeout){
             Object object = RESP_MAP.get(rpcInvocation.getUuid());
             if(object instanceof RpcInvocation){
                 return ((RpcInvocation) object).getResponse();

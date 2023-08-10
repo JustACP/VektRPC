@@ -1,8 +1,10 @@
 package top.re1ife.vekt.framework.core.registry;
 
+import io.netty.util.internal.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
 import top.re1ife.vekt.framework.core.registry.nacos.ProviderNodeInfo;
 
 import java.nio.charset.StandardCharsets;
@@ -24,6 +26,9 @@ public class URL {
      */
     private String serviceName;
 
+    private String groupName;
+
+
     /**
      * 这里面可以自定义不限进行扩展
      * 分组
@@ -41,11 +46,26 @@ public class URL {
      * 将URL转换为写入zk的provider节点下的一段字符串
      */
     public static String buildProviderUrlStr(URL url) {
-        String host = url.getParameters().get("host");
-        String port = url.getParameters().get("port");
+
         return new String((url.getApplicationName() + ";" +
-                url.getServiceName() + ";" + host + ":" + port + ";" +
+                url.getServiceName() + ";" + url.getGroupName() + url.getHostIp() + ":" + url.getPort() + ";" +
                 System.currentTimeMillis()).getBytes(), StandardCharsets.UTF_8);
+    }
+
+    public String getHostIp(){
+        return parameters.get("host");
+    }
+
+    public int getPort(){
+        return Integer.parseInt(parameters.get("port"));
+    }
+
+    public String getGroupName(){
+        String groupName = parameters.get("groupName");
+        if(StringUtil.isNullOrEmpty(groupName)){
+            groupName = NacosConstant.DEFAULT_GROUP_NAME;
+        }
+        return groupName;
     }
 
     /**
@@ -73,6 +93,10 @@ public class URL {
         providerNodeInfo.setAddress(items[4]);
         return providerNodeInfo;
     }
+
+
+
+
 
 
 

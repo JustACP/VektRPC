@@ -14,7 +14,11 @@ public class ProviderNodeInfo {
 
     private String serviceName;
 
+    private String groupName;
+
     private String address;
+
+
 
 
 }

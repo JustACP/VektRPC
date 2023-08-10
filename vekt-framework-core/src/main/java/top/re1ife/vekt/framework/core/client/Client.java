@@ -2,14 +2,12 @@ package top.re1ife.vekt.framework.core.client;
 
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -19,11 +17,17 @@ import top.re1ife.vekt.framework.core.common.RpcEncoder;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.common.RpcProtocol;
 import top.re1ife.vekt.framework.core.common.cache.CommonClientCache;
+import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
+import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
+import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ClientConfig;
 import top.re1ife.vekt.framework.core.proxy.jdk.JDKProxyFactory;
+import top.re1ife.vekt.framework.core.registry.URL;
+import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
+import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
 import top.re1ife.vekt.framework.interfaces.DataService;
 
-import java.net.Socket;
+import java.util.List;
 
 /**
  * @author re1ife
@@ -35,19 +39,26 @@ public class Client {
 
     private Logger logger = LoggerFactory.getLogger(Client.class);
 
+
     public static EventLoopGroup clientGroup = new NioEventLoopGroup();
 
     @Getter
     @Setter
     private ClientConfig clientConfig;
 
+    private AbstractRegister abstractRegister;
+
+    private VektRpcListenerLoader vektRpcListenerLoader;
+
+    @Getter
+    private Bootstrap bootstrap = new Bootstrap();
+
     /**
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
      *  最后有一个异步线程将发送队列内部的数据一个个地发送到服务端，并且等待服务端响应对应的数据结果
      */
-    public RpcReference startClientApplication(){
+    public RpcReference initClientApplication(){
         EventLoopGroup clientGroup = new NioEventLoopGroup();
-        Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
 
@@ -62,22 +73,63 @@ public class Client {
             }
         });
 
-        //常规连接Netty服务端
-        ChannelFuture channelFuture = bootstrap.connect(clientConfig.getServerAddr(),clientConfig.getPort());
-        logger.info("client start!");
-        this.startClient(channelFuture);
-        RpcReference reference = new RpcReference(new JDKProxyFactory());
-        return reference;
+        vektRpcListenerLoader = new VektRpcListenerLoader();
+        vektRpcListenerLoader.init();
+
+        this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
+        RpcReference rpcReference = null;
+        if("javassist".equals(clientConfig.getProxyType())){
+//            rpcReference = new RpcReference(new )
+        } else {
+            rpcReference = new RpcReference(new JDKProxyFactory());
+        }
+        return  rpcReference;
+
+//        //常规连接Netty服务端
+//        ChannelFuture channelFuture = bootstrap.connect(clientConfig.getServerAddr(),clientConfig.getPort());
+//        logger.info("client start!");
+//        this.startClient(channelFuture);
+//        RpcReference reference = new RpcReference(new JDKProxyFactory());
+//        return reference;
+    }
+
+    public void doSubscribeService(Class serviceBean){
+        if(abstractRegister == null){
+            abstractRegister = new NacosRegister(clientConfig.getRegisterAddr());
+        }
+
+        URL url = new URL();
+        url.setApplicationName(clientConfig.getApplicationName());
+        url.setServiceName(serviceBean.getName());
+        url.addParameter("host", CommonUtils.getIpAddress());
+        abstractRegister.subscribe(url);
+    }
+
+    /**
+     * 开始和各个provider建立链接
+     */
+    public void doConnectServer(){
+        for (URL url : CommonClientCache.SUBSCRIBE_SERVICE_LIST) {
+            List<String> providers = abstractRegister.getProviderIps(url.getServiceName());
+            for (String provider : providers) {
+                try {
+                    ConnectionHandler.connect(url.getServiceName(), provider);
+                } catch (InterruptedException e) {
+                    logger.error("[doConnectServer] connect fail", e);
+                }
+            }
+            abstractRegister.doAfterSubscribe(url);
+        }
     }
 
     /**
      * 异步发送消息
      */
     class AsyncSendJob implements Runnable{
-        private ChannelFuture channelFuture;
 
-        public AsyncSendJob(ChannelFuture channelFuture){
-            this.channelFuture = channelFuture;
+
+        public AsyncSendJob(){
+
         }
 
 
@@ -91,6 +143,7 @@ public class Client {
                     logger.info("data : {}",JSONObject.toJSONString(data));
                     String json = JSONObject.toJSONString(data);
                     RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
                     //发送数据
                     channelFuture.channel().writeAndFlush(rpcProtocol);
                     logger.info("Message Send Success!");
@@ -104,21 +157,21 @@ public class Client {
     /**
      * 创建发送线程，将数据包发给服务端
      */
-    private void startClient(ChannelFuture channelFuture){
+    private void startClient(){
         //请求发送任务交给单独IO线程负责、实现异步
-        Thread asyncSendJob = new Thread(new AsyncSendJob(channelFuture));
+        Thread asyncSendJob = new Thread(new AsyncSendJob());
         asyncSendJob.start();
     }
 
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setPort(8999);
-        clientConfig.setServerAddr("localhost");
-        client.setClientConfig(clientConfig);
+        RpcReference reference = client.initClientApplication();
 
-        RpcReference rpcReference = client.startClientApplication();
-        DataService dataService = rpcReference.get(DataService.class);
+        DataService dataService = reference.get(DataService.class);
+        client.doSubscribeService(DataService.class);
+        ConnectionHandler.setBootstrap(client.getBootstrap());
+        client.doConnectServer();
+        client.startClient();
         for(int i = 0; i < 100;i++){
             String result = dataService.sendData("test");
             System.out.println(Thread.currentThread() + ": " + result);

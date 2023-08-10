@@ -11,9 +11,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.core.common.RpcDecoder;
 import top.re1ife.vekt.framework.core.common.RpcEncoder;
+import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
+import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
+import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
+import top.re1ife.vekt.framework.core.registry.RegistryService;
+import top.re1ife.vekt.framework.core.registry.URL;
+import top.re1ife.vekt.framework.core.registry.nacos.NacosClient;
+import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
+
+import javax.xml.crypto.Data;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
+import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
 
 public class Server {
     private static EventLoopGroup bossGroup = null;
@@ -22,6 +32,8 @@ public class Server {
     private Logger logger = LoggerFactory.getLogger(Server.class);
 
     private ServerConfig serverConfig;
+
+    private RegistryService registryService;
 
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -60,10 +72,17 @@ public class Server {
             }
         });
 
+        this.batchExportUrl();
+
         bootstrap.bind(serverConfig.getPort()).sync();
     }
 
-    public void registryService(Object serviceBean) {
+
+    /**
+     * 暴露服务信息
+     * @param serviceBean
+     */
+    public void exportService(Object serviceBean) {
         if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
@@ -72,19 +91,50 @@ public class Server {
         if (classes.length > 1){
             throw new RuntimeException("service must only had one interfaces!");
         }
+
+        if(registryService == null){
+            registryService = new NacosRegister(serverConfig.getRegisterAddr());
+        }
+
         Class<?> interfaceClass = classes[0];
         //需要注册的对象统一放到一个Map集合中进行管理
         PROVIDER_CLASS_MAP.put(interfaceClass.getName(),serviceBean);
+        URL url = new URL();
+        url.setServiceName(interfaceClass.getName());
+        url.setGroupName(NacosConstant.DEFAULT_GROUP_NAME);
+        url.addParameter("host", CommonUtils.getIpAddress());
+        url.addParameter("port", String.valueOf(serverConfig.getPort()));
+        PROVIDER_URL_SET.add(url);
+    }
 
+    /**
+     * 为了将服务端的具体访问都暴露到注册中心
+     */
+    private  void batchExportUrl(){
+        Thread task = new Thread(() -> {
+            try {
+                Thread.sleep(2500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            for (URL url : PROVIDER_URL_SET) {
+                registryService.Register(url);
+            }
+        });
+
+        task.start();
+    }
+
+    public void initServerConfig(){
+        ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
+        this.setServerConfig(serverConfig);
     }
 
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
-        ServerConfig serverConfig = new ServerConfig();
-        serverConfig.setPort(8999);
-        server.setServerConfig(serverConfig);
-        server.registryService(new DataServiceImpl());
-        server.startApplication();;
+        server.initServerConfig();
+        server.exportService(new DataServiceImpl());
+        server.startApplication();
     }
 
 
