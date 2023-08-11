@@ -4,8 +4,8 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import top.re1ife.vekt.framework.core.common.ChannelFuturePollingRef;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
-import top.re1ife.vekt.framework.core.config.ClientConfig;
 import top.re1ife.vekt.framework.core.registry.URL;
+import top.re1ife.vekt.framework.core.router.VektRouter;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,12 +21,12 @@ public class CommonClientCache {
 
     public static Map<String, Object> RESP_MAP = new ConcurrentHashMap<>();
 
-    public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
+    public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<URL>();
 
     public static Map<String, EventListener> SERVICE_LISTENER = new ConcurrentHashMap<>();
 
 
-    public static Map<String, Map<String, String>> URL_MAP = new ConcurrentHashMap<>();
+    public static Map<String, Map<String, Double>> URL_MAP = new ConcurrentHashMap<>();
 
     public static Set<String> SERVER_ADDRESS = new HashSet<>();
 
@@ -38,6 +38,7 @@ public class CommonClientCache {
 
     public static ChannelFuturePollingRef CHANNEL_FUTURE_POLLING_REF = new ChannelFuturePollingRef();
 
+    public static VektRouter VEKT_ROUTER;
 
 
 }

@@ -1,5 +1,7 @@
 package top.re1ife.vekt.framework.core.common.cache;
 
+import top.re1ife.vekt.framework.core.registry.RegistryService;
+import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.URL;
 
 import java.util.Map;
@@ -11,5 +13,7 @@ public class CommonServerCache {
 
     public static Map<String,Object> PROVIDER_CLASS_MAP = new ConcurrentHashMap<>();
 
-    public static Set<URL> PROVIDER_URL_SET = new CopyOnWriteArraySet<>();
+    public static Set<URL> PROVIDER_URL_SET = new CopyOnWriteArraySet<top.re1ife.vekt.framework.core.registry.URL>();
+
+    public static RegistryService REGISTRY_SERVICE;
 }

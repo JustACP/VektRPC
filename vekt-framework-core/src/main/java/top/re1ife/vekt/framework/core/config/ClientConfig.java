@@ -18,6 +18,8 @@ public class ClientConfig {
 
     private long callTimeout = 3000;
 
+    private String routerStrategy;
+
 
 
 }

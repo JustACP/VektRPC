@@ -18,7 +18,7 @@ public class ProviderNodeInfo {
 
     private String address;
 
-
+    private double weight;
 
 
 }

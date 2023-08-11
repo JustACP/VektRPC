@@ -13,10 +13,7 @@ import top.re1ife.vekt.framework.core.common.event.data.URLChangeWrapper;
 import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.SERVICE_LISTENER;
 
@@ -100,6 +97,20 @@ public class NacosRegister extends AbstractRegister implements RegistryService {
         }
         return providerIps;
 
+    }
+
+    @Override
+    public Map<String, Double> getServiceWeightMap(String serviceName) {
+        List<Instance> allServiceInstance = nacosClient.getAllServiceInstance(serviceName);
+        StringBuilder ipAndPortBuilder = new StringBuilder();
+        Map<String, Double> result = new HashMap<>();
+        for (Instance instance : allServiceInstance) {
+            ipAndPortBuilder.append(instance.getIp()).append(":").append(instance.getPort());
+            result.put(ipAndPortBuilder.toString(), instance.getWeight());
+            ipAndPortBuilder.delete(0, ipAndPortBuilder.length());
+        }
+
+        return result;
     }
 
 

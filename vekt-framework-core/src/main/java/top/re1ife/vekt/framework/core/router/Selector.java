@@ -1,7 +1,9 @@
 package top.re1ife.vekt.framework.core.router;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * @author re1ife
@@ -10,6 +12,8 @@ import lombok.Getter;
  * @Copyright：re1ife | blog: re1ife.top
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Selector {
 
     /**

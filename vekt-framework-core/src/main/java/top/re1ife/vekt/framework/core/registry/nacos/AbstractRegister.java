@@ -4,6 +4,7 @@ import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 
 import java.util.List;
+import java.util.Map;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
@@ -39,4 +40,6 @@ public abstract class AbstractRegister implements RegistryService {
      * 留给子类扩展
      */
     public abstract List<String> getProviderIps(String serviceName);
+
+    public abstract Map<String, Double> getServiceWeightMap(String serviceName);
 }

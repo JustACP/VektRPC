@@ -17,10 +17,7 @@ import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
 import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
-import top.re1ife.vekt.framework.core.registry.nacos.NacosClient;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
-
-import javax.xml.crypto.Data;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;

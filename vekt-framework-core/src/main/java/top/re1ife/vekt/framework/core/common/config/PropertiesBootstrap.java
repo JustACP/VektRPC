@@ -20,6 +20,9 @@ public class PropertiesBootstrap {
 
     public static final String CALL_TIMEOUT = "vektrpc.call.timeout";
 
+    public static final String ROUTE_STRATEGY = "vekt.routerStrategy";
+
+
     public static ServerConfig loadServerConfigFromLocal(){
         try{
             PropertiesLoader.loadConfiguration();
@@ -47,6 +50,7 @@ public class PropertiesBootstrap {
         clientConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
         clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
+        clientConfig.setRouterStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         return clientConfig;
     }
 

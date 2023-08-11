@@ -1,7 +1,7 @@
 package top.re1ife.vekt.framework.core.router;
 
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
-import top.re1ife.vekt.framework.core.registery.URL;
+import top.re1ife.vekt.framework.core.registry.URL;
 
 /**
  * @author re1ife

@@ -49,7 +49,7 @@ public class URL {
 
         return new String((url.getApplicationName() + ";" +
                 url.getServiceName() + ";" + url.getGroupName() + url.getHostIp() + ":" + url.getPort() + ";" +
-                System.currentTimeMillis()).getBytes(), StandardCharsets.UTF_8);
+                System.currentTimeMillis() + ";").getBytes(), StandardCharsets.UTF_8);
     }
 
     public String getHostIp(){

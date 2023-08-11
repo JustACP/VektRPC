@@ -4,13 +4,13 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
+import top.re1ife.vekt.framework.core.router.Selector;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.CONNECT_MAP;
-import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.SERVER_ADDRESS;
+import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
 
 /**
  * Description：将连接的建立、断开、按照服务名筛选等功能都封装在了一起，
@@ -25,12 +25,11 @@ public class ConnectionHandler {
 
     /**
      * 构建单个连接通道，元操作
-     * @param providerServiceName
-     * @param providerIp
+     * @param serviceName
+     * @param ip
+     * @param port
      * @throws InterruptedException
      */
-
-
     public static void connect(String serviceName, String ip, int port) throws InterruptedException {
         ChannelFuture channelFuture = bootstrap.connect(ip, port).sync();
         ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper();
@@ -39,6 +38,11 @@ public class ConnectionHandler {
         channelFutureWrapper.setPort(port);
         StringBuilder st = new StringBuilder();
         st.append(ip).append(":").append(port);
+
+
+        //获取权重
+        Double weight = URL_MAP.get(serviceName).get(st.toString());
+        channelFutureWrapper.setWeight(weight);
         SERVER_ADDRESS.add(st.toString());
 
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(serviceName);
@@ -48,19 +52,22 @@ public class ConnectionHandler {
 
         channelFutureWrappers.add(channelFutureWrapper);
         CONNECT_MAP.put(serviceName, channelFutureWrappers);
+
+        Selector selector = new Selector(serviceName);
+        VEKT_ROUTER.refreshRouterArr(selector);
     }
 
-    public static void connect(String serviceName, String providerIp) throws InterruptedException{
+    public static void connect(String serviceName, String providerIpAndPort) throws InterruptedException{
         if(bootstrap == null){
             throw new RuntimeException("bootstrap can not be null");
         }
 
         //格式错误
-        if(!providerIp.contains(":")){
+        if(!providerIpAndPort.contains(":")){
             return;
         }
 
-        String[] providerAddress = providerIp.split(":");
+        String[] providerAddress = providerIpAndPort.split(":");
         String ip = providerAddress[0];
         int port = Integer.parseInt(providerAddress[1]);
         connect(serviceName, ip, port);
@@ -88,12 +95,15 @@ public class ConnectionHandler {
      * 默认走随机策略获取ChannelFuture
      */
     public static ChannelFuture getChannelFuture(String providerServiceName){
-        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
-        if (channelFutureWrappers.isEmpty()){
-            throw new RuntimeException("no provider exist for " + providerServiceName);
+
+        Selector selector = new Selector(providerServiceName);
+        ChannelFutureWrapper channelFutureWrapper = VEKT_ROUTER.select(selector);
+        if(channelFutureWrapper == null){
+            String message = String.format("no service %s provider", providerServiceName);
+            throw new RuntimeException(message);
         }
 
-        return channelFutureWrappers.get(new Random().nextInt(channelFutureWrappers.size())).getChannelFuture();
+        return channelFutureWrapper.getChannelFuture();
     }
 
 
