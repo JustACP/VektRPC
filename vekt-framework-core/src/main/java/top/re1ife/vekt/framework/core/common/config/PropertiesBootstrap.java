@@ -20,7 +20,7 @@ public class PropertiesBootstrap {
 
     public static final String CALL_TIMEOUT = "vektrpc.call.timeout";
 
-    public static final String ROUTE_STRATEGY = "vekt.routerStrategy";
+    public static final String ROUTE_STRATEGY = "vektrpc.routeStrategy";
 
 
     public static ServerConfig loadServerConfigFromLocal(){

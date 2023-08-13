@@ -13,14 +13,14 @@ import top.re1ife.vekt.framework.core.common.RpcDecoder;
 import top.re1ife.vekt.framework.core.common.RpcEncoder;
 import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
 import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
+import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
 import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
 
-import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
-import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
+import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.*;
 
 public class Server {
     private static EventLoopGroup bossGroup = null;
@@ -30,7 +30,7 @@ public class Server {
 
     private ServerConfig serverConfig;
 
-    private RegistryService registryService;
+    private static VektRpcListenerLoader vektRpcListenerLoader;
 
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -89,8 +89,8 @@ public class Server {
             throw new RuntimeException("service must only had one interfaces!");
         }
 
-        if(registryService == null){
-            registryService = new NacosRegister(serverConfig.getRegisterAddr());
+        if(REGISTRY_SERVICE == null){
+            REGISTRY_SERVICE = new NacosRegister(serverConfig.getRegisterAddr());
         }
 
         Class<?> interfaceClass = classes[0];
@@ -115,7 +115,7 @@ public class Server {
                 throw new RuntimeException(e);
             }
             for (URL url : PROVIDER_URL_SET) {
-                registryService.Register(url);
+                REGISTRY_SERVICE.Register(url);
             }
         });
 
@@ -130,8 +130,12 @@ public class Server {
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
         server.initServerConfig();
+        vektRpcListenerLoader = new VektRpcListenerLoader();
+        vektRpcListenerLoader.init();
         server.exportService(new DataServiceImpl());
-        server.startApplication();
+         server.startApplication();
+        //注册destroy钩子函数
+        ApplicationShutdownHook.registryShutdownHook();
     }
 
 

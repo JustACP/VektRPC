@@ -25,9 +25,16 @@ import top.re1ife.vekt.framework.core.proxy.jdk.JDKProxyFactory;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
+import top.re1ife.vekt.framework.core.router.RandomRouterImpl;
+import top.re1ife.vekt.framework.core.router.RotateRouterImpl;
 import top.re1ife.vekt.framework.interfaces.DataService;
 
 import java.util.List;
+import java.util.Map;
+
+import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.RANDOM_ROUTER_TYPE;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.ROTATE_ROUTER_TYPE;
 
 /**
  * @author re1ife
@@ -102,6 +109,8 @@ public class Client {
         url.setApplicationName(clientConfig.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
+        Map<String, Double> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
+        URL_MAP.put(serviceBean.getName(), result);
         abstractRegister.subscribe(url);
     }
 
@@ -118,6 +127,7 @@ public class Client {
                     logger.error("[doConnectServer] connect fail", e);
                 }
             }
+            url.addParameter("providerIps", JSONObject.toJSONString(providers));
             abstractRegister.doAfterSubscribe(url);
         }
     }
@@ -166,6 +176,7 @@ public class Client {
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
         RpcReference reference = client.initClientApplication();
+        client.initConfig();
 
         DataService dataService = reference.get(DataService.class);
         client.doSubscribeService(DataService.class);
@@ -175,6 +186,16 @@ public class Client {
         for(int i = 0; i < 100;i++){
             String result = dataService.sendData("test");
             System.out.println(Thread.currentThread() + ": " + result);
+        }
+    }
+
+    private void initConfig(){
+        //初始化路由策略
+        String routeStrategy = clientConfig.getRouterStrategy();
+        if (RANDOM_ROUTER_TYPE.equals(routeStrategy)) {
+            VEKT_ROUTER = new RandomRouterImpl();
+        } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
+            VEKT_ROUTER = new RotateRouterImpl();
         }
     }
 }

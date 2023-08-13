@@ -3,7 +3,7 @@ package top.re1ife.vekt.framework.core.common;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import top.re1ife.vekt.framework.core.common.constants.RpcConstants;
+import top.re1ife.vekt.framework.core.common.constant.RpcConstants;
 
 import java.io.Serializable;
 import java.util.Arrays;

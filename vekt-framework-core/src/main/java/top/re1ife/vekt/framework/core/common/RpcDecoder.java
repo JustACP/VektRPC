@@ -6,7 +6,7 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
 
-import static top.re1ife.vekt.framework.core.common.constants.RpcConstants.MAGIC_NUMBER;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.MAGIC_NUMBER;
 
 /**
  * RPC 解码器 所有数据都入站要过解码器
