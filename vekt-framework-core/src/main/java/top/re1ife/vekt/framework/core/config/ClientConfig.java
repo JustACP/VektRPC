@@ -20,6 +20,8 @@ public class ClientConfig {
 
     private String routerStrategy;
 
+    private String clientSerializeType;
+
 
 
 }

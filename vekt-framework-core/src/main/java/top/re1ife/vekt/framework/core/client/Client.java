@@ -27,14 +27,17 @@ import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
 import top.re1ife.vekt.framework.core.router.RandomRouterImpl;
 import top.re1ife.vekt.framework.core.router.RotateRouterImpl;
+import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
 import top.re1ife.vekt.framework.interfaces.DataService;
 
 import java.util.List;
 import java.util.Map;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
-import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.RANDOM_ROUTER_TYPE;
-import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.ROTATE_ROUTER_TYPE;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
 
 /**
  * @author re1ife
@@ -151,8 +154,7 @@ public class Client {
                     //阻塞模式
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
                     logger.info("data : {}",JSONObject.toJSONString(data));
-                    String json = JSONObject.toJSONString(data);
-                    RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());
+                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
                     //发送数据
                     channelFuture.channel().writeAndFlush(rpcProtocol);
@@ -197,6 +199,25 @@ public class Client {
         } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
             VEKT_ROUTER = new RotateRouterImpl();
         }
+
+        String clientSerialize = clientConfig.getClientSerializeType();
+        switch (clientSerialize) {
+            case JDK_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case HESSIAN2_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            case KRYO_SERIALIZE_TYPE:
+                CLIENT_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " + clientSerialize);
+        }
+        System.out.println("clientSerialize is " + clientSerialize);
     }
 }
 

@@ -1,5 +1,8 @@
 package top.re1ife.vekt.framework.core.server;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.interfaces.DataService;

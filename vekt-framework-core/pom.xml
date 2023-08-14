@@ -25,6 +25,8 @@
         <logback.classic.version>1.4.2</logback.classic.version>
         <lombok.version>1.18.24</lombok.version>
         <nacos.client.version>2.2.4</nacos.client.version>
+        <hessian.version>4.0.62</hessian.version>
+        <kryo.version>5.3.0</kryo.version>
     </properties>
 
     <dependencies>
@@ -123,7 +125,17 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>${kryo.version}</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.caucho</groupId>
+            <artifactId>hessian</artifactId>
+            <version>${hessian.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

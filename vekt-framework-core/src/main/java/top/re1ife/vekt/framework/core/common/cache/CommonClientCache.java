@@ -6,6 +6,7 @@ import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.router.VektRouter;
+import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -39,6 +40,11 @@ public class CommonClientCache {
     public static ChannelFuturePollingRef CHANNEL_FUTURE_POLLING_REF = new ChannelFuturePollingRef();
 
     public static VektRouter VEKT_ROUTER;
+
+    /**
+     * 客户端序列化方式
+     */
+    public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 
 
 }

@@ -11,6 +11,7 @@
     <modules>
         <module>vekt-framework-interface</module>
         <module>vekt-framework-core</module>
+        <module>vekt-framework-jmh</module>
     </modules>
     <properties>
         <maven.compiler.source>11</maven.compiler.source>

@@ -19,8 +19,13 @@ import top.re1ife.vekt.framework.core.config.ServerConfig;
 import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
+import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.*;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
 
 public class Server {
     private static EventLoopGroup bossGroup = null;
@@ -77,9 +82,10 @@ public class Server {
 
     /**
      * 暴露服务信息
-     * @param serviceBean
+     * @param serviceWrapper
      */
-    public void exportService(Object serviceBean) {
+    public void exportService(ServiceWrapper serviceWrapper) {
+        Object serviceBean = serviceWrapper.getServerObj();
         if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
@@ -101,6 +107,7 @@ public class Server {
         url.setGroupName(NacosConstant.DEFAULT_GROUP_NAME);
         url.addParameter("host", CommonUtils.getIpAddress());
         url.addParameter("port", String.valueOf(serverConfig.getPort()));
+        url.addParameter("group", serviceWrapper.getGroupName());
         PROVIDER_URL_SET.add(url);
     }
 
@@ -125,6 +132,25 @@ public class Server {
     public void initServerConfig(){
         ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
         this.setServerConfig(serverConfig);
+
+        String serverSerialize = serverConfig.getServerSerializeType();
+        switch (serverSerialize){
+            case JDK_SERIALIZE_TYPE :
+                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case HESSIAN2_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            case KRYO_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " +serverSerialize);
+        }
+        logger.info("serverSerialize is {}" ,serverSerialize);
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -132,7 +158,8 @@ public class Server {
         server.initServerConfig();
         vektRpcListenerLoader = new VektRpcListenerLoader();
         vektRpcListenerLoader.init();
-        server.exportService(new DataServiceImpl());
+        server.exportService(new ServiceWrapper(new DataServiceImpl()));
+        server.exportService(new ServiceWrapper(new UserServiceImpl()));
          server.startApplication();
         //注册destroy钩子函数
         ApplicationShutdownHook.registryShutdownHook();

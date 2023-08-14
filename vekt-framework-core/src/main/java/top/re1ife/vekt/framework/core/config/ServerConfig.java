@@ -13,4 +13,6 @@ public class ServerConfig {
     private String applicationName;
 
     private String registerAddr;
+
+    private String serverSerializeType;
 }

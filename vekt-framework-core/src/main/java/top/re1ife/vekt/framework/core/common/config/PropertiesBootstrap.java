@@ -22,6 +22,10 @@ public class PropertiesBootstrap {
 
     public static final String ROUTE_STRATEGY = "vektrpc.routeStrategy";
 
+    public static final String SERVER_SERIALIZE_TYPE="vektrpc.serverSerialize";
+
+    public static final String CLIENT_SERIALIZE_TYPE="vektrpc.clientSerialize";
+
 
     public static ServerConfig loadServerConfigFromLocal(){
         try{
@@ -34,6 +38,7 @@ public class PropertiesBootstrap {
         serverConfig.setPort(PropertiesLoader.getPropertiesInteger(SERVER_PORT));
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
+        serverConfig.setServerSerializeType(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE_TYPE));
 
         return serverConfig;
     }
@@ -51,6 +56,7 @@ public class PropertiesBootstrap {
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
         clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
         clientConfig.setRouterStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
+        clientConfig.setClientSerializeType(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
         return clientConfig;
     }
 
