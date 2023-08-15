@@ -4,6 +4,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.server.ServiceWrapper;
 
+import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_SERVICE_WRAPPER_MAP;
+
 public class ServerTokenFilterImpl implements IServerFilter{
 
 

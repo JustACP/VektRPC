@@ -23,4 +23,12 @@ public class ChannelFuturePollingRef {
         return channelFutureWrappers[index];
     }
 
+    public ChannelFutureWrapper getChannelFutureWrap(ChannelFutureWrapper[] channelFutureWrappers){
+
+        //自增取余数 顺序便利
+        long i = referenceTimes.getAndIncrement();
+        int index = (int) (i % channelFutureWrappers.length);
+        return channelFutureWrappers[index];
+    }
+
 }

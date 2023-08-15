@@ -27,7 +27,7 @@ public class RotateRouterImpl implements VektRouter{
 
     @Override
     public ChannelFutureWrapper select(Selector selector) {
-        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrap(selector.getProviderServiceName());
+        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrap(selector.getChannelFutureWrappers());
     }
 
     @Override

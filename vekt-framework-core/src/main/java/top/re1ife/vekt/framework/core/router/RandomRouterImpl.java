@@ -33,7 +33,7 @@ public class RandomRouterImpl implements VektRouter{
 
     @Override
     public ChannelFutureWrapper select(Selector selector) {
-        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrap(selector.getProviderServiceName());
+        return CHANNEL_FUTURE_POLLING_REF.getChannelFutureWrap(selector.getChannelFutureWrappers());
     }
 
     /**

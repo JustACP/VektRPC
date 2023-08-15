@@ -17,4 +17,6 @@ public class ChannelFutureWrapper {
     private Integer port;
 
     private Double weight;
+
+    private String group;
 }

@@ -26,6 +26,9 @@ public class URL {
      */
     private String serviceName;
 
+    /**
+     * Nacos group
+     */
     private String groupName;
 
 
@@ -48,8 +51,8 @@ public class URL {
     public static String buildProviderUrlStr(URL url) {
 
         return new String((url.getApplicationName() + ";" +
-                url.getServiceName() + ";" + url.getGroupName() + url.getHostIp() + ":" + url.getPort() + ";" +
-                System.currentTimeMillis() + ";").getBytes(), StandardCharsets.UTF_8);
+                url.getServiceName() + ";" + url.getGroupName() +";"+ url.getHostIp() + ":" + url.getPort() + ";" +
+                System.currentTimeMillis() + ";" + url.getParameters().get("group")).getBytes(), StandardCharsets.UTF_8);
     }
 
     public String getHostIp(){
@@ -87,10 +90,12 @@ public class URL {
      * 将某个节点下的信息转换为一个Provider节点对象
      */
     public static ProviderNodeInfo buildURLFromUrlStr(String providerNodeStr){
-        String[] items = providerNodeStr.split("/");
+        String[] items = providerNodeStr.split(";");
         ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
-        providerNodeInfo.setServiceName(items[2]);
-        providerNodeInfo.setAddress(items[4]);
+        providerNodeInfo.setServiceName(items[1]);
+        providerNodeInfo.setGroupName(items[2]);
+        providerNodeInfo.setAddress(items[3]);
+        providerNodeInfo.setGroup(items[4]);
         return providerNodeInfo;
     }
 

@@ -5,6 +5,7 @@ import top.re1ife.vekt.framework.core.common.ChannelFuturePollingRef;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.config.ClientConfig;
+import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.router.VektRouter;
 import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
@@ -47,7 +48,14 @@ public class CommonClientCache {
      */
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 
+    /**
+     * 客户端过滤链
+     */
+    public static ClientFilterChain CLIENT_FILTER_CHAIN;
+
+
     public static ClientConfig CLIENT_CONFIG;
+
 
 
 

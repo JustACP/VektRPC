@@ -14,11 +14,19 @@ public class ProviderNodeInfo {
 
     private String serviceName;
 
+    /**
+     * Nacos的GroupName
+     */
     private String groupName;
 
     private String address;
 
     private double weight;
+
+    /**
+     * Provider 的group
+     */
+    private String group;
 
 
 }

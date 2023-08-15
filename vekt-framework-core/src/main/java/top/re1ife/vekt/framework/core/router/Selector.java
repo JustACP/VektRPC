@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 
 /**
  * @author re1ife
@@ -21,4 +22,7 @@ public class Selector {
      */
 
     private String providerServiceName;
+
+
+    private ChannelFutureWrapper[] channelFutureWrappers;
 }
