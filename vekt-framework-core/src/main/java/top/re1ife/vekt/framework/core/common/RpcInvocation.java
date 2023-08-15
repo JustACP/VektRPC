@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 @AllArgsConstructor
@@ -36,6 +38,11 @@ public class RpcInvocation {
      * 接口响应的数据塞入这个字段中(如果是异步调用或者是void类型，这里就为空)
      */
     private Object response;
+
+    /**
+     * 附加信息
+     */
+    private Map<String, Object> attachments = new ConcurrentHashMap<>();
 
     @Override
     public String toString() {

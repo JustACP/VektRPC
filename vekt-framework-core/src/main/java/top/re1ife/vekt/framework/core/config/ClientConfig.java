@@ -16,11 +16,16 @@ public class ClientConfig {
 
     private String proxyType;
 
-    private long callTimeout = 3000;
+    private String callTimeout = "3000";
 
     private String routerStrategy;
 
     private String clientSerializeType;
+
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
 
 
 

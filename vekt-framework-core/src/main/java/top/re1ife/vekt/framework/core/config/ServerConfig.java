@@ -15,4 +15,19 @@ public class ServerConfig {
     private String registerAddr;
 
     private String serverSerializeType;
+
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
+
+    /**
+     * 任务队列大小
+     */
+    private Integer serverQueueSize;
+
+    /**
+     * 处理业务线程数
+     */
+    private Integer serverBizThreadNums;
 }

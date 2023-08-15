@@ -21,6 +21,16 @@ public class ServiceWrapper {
 
     private String groupName = NacosConstant.DEFAULT_GROUP_NAME;
 
+    /**
+     * 整个应用的token校验
+     */
+    private String serviceToken = "";
+
+    /**
+     * 限流策略
+     */
+    private Integer limit = -1;
+
     public ServiceWrapper(Object serverObj) {
         this.serverObj = serverObj;
     }

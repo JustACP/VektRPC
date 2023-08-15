@@ -4,6 +4,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import top.re1ife.vekt.framework.core.common.ChannelFuturePollingRef;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
+import top.re1ife.vekt.framework.core.config.ClientConfig;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.router.VektRouter;
 import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
@@ -45,6 +46,10 @@ public class CommonClientCache {
      * 客户端序列化方式
      */
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
+
+    public static ClientConfig CLIENT_CONFIG;
+
+
 
 
 }

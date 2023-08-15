@@ -26,6 +26,12 @@ public class PropertiesBootstrap {
 
     public static final String CLIENT_SERIALIZE_TYPE="vektrpc.clientSerialize";
 
+    public static final String REGISTER_TYPE = "vektrpc.registerType";
+
+    public static final String SERVER_QUEUE_SIZE = "vektrpc.server.queue.size";
+
+    public static final String SERVER_BIZ_THREAD_NUMS = "vektrpc.server.biz_thread_nums";
+
 
     public static ServerConfig loadServerConfigFromLocal(){
         try{
@@ -39,6 +45,9 @@ public class PropertiesBootstrap {
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         serverConfig.setServerSerializeType(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE_TYPE));
+        serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
+        serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesInteger(SERVER_QUEUE_SIZE));
+        serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesInteger(SERVER_BIZ_THREAD_NUMS));
 
         return serverConfig;
     }
@@ -54,9 +63,10 @@ public class PropertiesBootstrap {
         clientConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         clientConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
-        clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
+        clientConfig.setCallTimeout(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT)));
         clientConfig.setRouterStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         clientConfig.setClientSerializeType(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
+        clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         return clientConfig;
     }
 
