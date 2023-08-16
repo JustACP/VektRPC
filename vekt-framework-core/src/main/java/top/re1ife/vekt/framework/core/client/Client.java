@@ -21,23 +21,31 @@ import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ClientConfig;
+import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
+import top.re1ife.vekt.framework.core.filter.client.IClientFilter;
 import top.re1ife.vekt.framework.core.proxy.jdk.JDKProxyFactory;
+import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
 import top.re1ife.vekt.framework.core.router.RandomRouterImpl;
 import top.re1ife.vekt.framework.core.router.RotateRouterImpl;
+import top.re1ife.vekt.framework.core.router.VektRouter;
+import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
 import top.re1ife.vekt.framework.interfaces.DataService;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
 import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
+import static top.re1ife.vekt.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @author re1ife
@@ -52,9 +60,7 @@ public class Client {
 
     public static EventLoopGroup clientGroup = new NioEventLoopGroup();
 
-    @Getter
-    @Setter
-    private ClientConfig clientConfig;
+
 
     private AbstractRegister abstractRegister;
 
@@ -76,7 +82,8 @@ public class Client {
             @Override
             protected void initChannel(SocketChannel socketChannel) throws Exception {
                 //添加流水线那
-                socketChannel.pipeline().addLast(new RpcEncoder())
+                socketChannel.pipeline()
+                        .addLast(new RpcEncoder())
                         .addLast(new RpcDecoder())
                         .addLast(new ClientHandler());
 
@@ -86,9 +93,9 @@ public class Client {
         vektRpcListenerLoader = new VektRpcListenerLoader();
         vektRpcListenerLoader.init();
 
-        this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
+        CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
         RpcReference rpcReference = null;
-        if("javassist".equals(clientConfig.getProxyType())){
+        if("javassist".equals(CLIENT_CONFIG.getProxyType())){
 //            rpcReference = new RpcReference(new )
         } else {
             rpcReference = new RpcReference(new JDKProxyFactory());
@@ -105,11 +112,19 @@ public class Client {
 
     public void doSubscribeService(Class serviceBean){
         if(abstractRegister == null){
-            abstractRegister = new NacosRegister(clientConfig.getRegisterAddr());
+            try{
+                EXTENSION_LOADER.loadExtension(RegistryService.class);
+                LinkedHashMap<String, Class> registerClassMap = EXTENSION_LOADER_CLASS_CACHE.get(RegistryService.class.getName());
+                Class registerClass = registerClassMap.get(CLIENT_CONFIG.getRegisterType());
+                abstractRegister = (AbstractRegister) registerClass.newInstance();
+            } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            abstractRegister = new NacosRegister(CLIENT_CONFIG.getRegisterAddr());
         }
 
         URL url = new URL();
-        url.setApplicationName(clientConfig.getApplicationName());
+        url.setApplicationName(CLIENT_CONFIG.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
         Map<String, Double> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
@@ -169,55 +184,60 @@ public class Client {
     /**
      * 创建发送线程，将数据包发给服务端
      */
-    private void startClient(){
+    public void startClient(){
         //请求发送任务交给单独IO线程负责、实现异步
         Thread asyncSendJob = new Thread(new AsyncSendJob());
         asyncSendJob.start();
     }
 
-    public static void main(String[] args) throws Throwable {
-        Client client = new Client();
-        RpcReference reference = client.initClientApplication();
-        client.initConfig();
+//    public static void main(String[] args) throws Throwable {
+//        Client client = new Client();
+//        RpcReference reference = client.initClientApplication();
+//        client.initConfig();
+//
+//        DataService dataService = reference.get(DataService.class);
+//        client.doSubscribeService(DataService.class);
+//        ConnectionHandler.setBootstrap(client.getBootstrap());
+//        client.doConnectServer();
+//        client.startClient();
+//        for(int i = 0; i < 100;i++){
+//            String result = dataService.sendData("test");
+//            System.out.println(Thread.currentThread() + ": " + result);
+//        }
+//    }
 
-        DataService dataService = reference.get(DataService.class);
-        client.doSubscribeService(DataService.class);
-        ConnectionHandler.setBootstrap(client.getBootstrap());
-        client.doConnectServer();
-        client.startClient();
-        for(int i = 0; i < 100;i++){
-            String result = dataService.sendData("test");
-            System.out.println(Thread.currentThread() + ": " + result);
-        }
-    }
-
-    private void initConfig(){
+    private void initConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         //初始化路由策略
-        String routeStrategy = clientConfig.getRouterStrategy();
-        if (RANDOM_ROUTER_TYPE.equals(routeStrategy)) {
-            VEKT_ROUTER = new RandomRouterImpl();
-        } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
-            VEKT_ROUTER = new RotateRouterImpl();
+        EXTENSION_LOADER.loadExtension(VektRouter.class);
+        String routeStrategy = CLIENT_CONFIG.getRouterStrategy();
+        LinkedHashMap<String, Class> vektRouterMap = EXTENSION_LOADER_CLASS_CACHE.get(VektRouter.class);
+        Class vektRouterClass = vektRouterMap.get(routeStrategy);
+        if(vektRouterClass == null) {
+            throw new RuntimeException("no match routerStrategy for " + routeStrategy);
         }
 
-        String clientSerialize = clientConfig.getClientSerializeType();
-        switch (clientSerialize) {
-            case JDK_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case HESSIAN2_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new HessianSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            case KRYO_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new KryoSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for " + clientSerialize);
+        //初次序列化方式
+        EXTENSION_LOADER.loadExtension(SerializeFactory.class);
+        String serializeType = CLIENT_CONFIG.getClientSerializeType();
+        LinkedHashMap<String, Class> serializeTypeMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
+        Class serializeClass = serializeTypeMap.get(serializeType);
+        if(serializeClass == null){
+            throw new RuntimeException("no match serialize type for " + serializeType);
         }
-        System.out.println("clientSerialize is " + clientSerialize);
+
+        //初始化过滤链
+        EXTENSION_LOADER.loadExtension(IClientFilter.class);
+        ClientFilterChain clientFilterChain = new ClientFilterChain();
+        LinkedHashMap<String, Class> filterMap = EXTENSION_LOADER_CLASS_CACHE.get(IClientFilter.class.getName());
+        for (String implClassName : filterMap.keySet()) {
+            Class filterClass = filterMap.get(implClassName);
+            if(filterClass == null){
+                throw new NullPointerException("no match client filter for " + implClassName);
+            }
+            clientFilterChain.addServerFilter((IClientFilter) filterClass.newInstance());
+        }
+        CLIENT_FILTER_CHAIN = clientFilterChain;
+
     }
 }
 

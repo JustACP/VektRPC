@@ -9,6 +9,7 @@ import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.router.VektRouter;
 import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
+import top.re1ife.vekt.framework.core.spi.ExtensionLoader;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -56,7 +57,7 @@ public class CommonClientCache {
 
     public static ClientConfig CLIENT_CONFIG;
 
-
+    public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
 
 
 
