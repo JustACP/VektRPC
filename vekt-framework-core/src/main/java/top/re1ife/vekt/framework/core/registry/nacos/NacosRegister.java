@@ -15,7 +15,9 @@ import top.re1ife.vekt.framework.core.registry.URL;
 
 import java.util.*;
 
+import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.CLIENT_CONFIG;
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.SERVICE_LISTENER;
+import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.SERVER_CONFIG;
 
 public class NacosRegister extends AbstractRegister implements RegistryService {
 
@@ -24,6 +26,11 @@ public class NacosRegister extends AbstractRegister implements RegistryService {
 
 
     private AbstractNacosClient nacosClient;
+
+    public NacosRegister(){
+        String registryAddr = CLIENT_CONFIG != null ? CLIENT_CONFIG.getRegisterAddr() :  SERVER_CONFIG.getRegisterAddr();
+        this.nacosClient = new NacosClient(registryAddr);
+    }
 
     public NacosRegister(String address){
         this.nacosClient = new NacosClient(address);
