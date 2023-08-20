@@ -1,0 +1,3 @@
+logger=top.re1ife.vekt.framework.core.filter.client.ClientLogFilterImpl
+group=top.re1ife.vekt.framework.core.filter.client.ClientGroupFilterImpl
+directInvoke=top.re1ife.vekt.framework.core.filter.client.DirectInvokeFilterImpl

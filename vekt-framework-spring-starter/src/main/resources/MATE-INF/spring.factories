@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+top.re1ife.vekt.framework.springboot.starter.config.VektRpcClientAutoConfiguration,
+top.re1ife.vekt.framework.springboot.starter.config.VektRpcServerAutoConfiguration

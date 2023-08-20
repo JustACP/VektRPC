@@ -23,6 +23,7 @@ import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
 import top.re1ife.vekt.framework.core.common.constant.RpcConstants;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
+import top.re1ife.vekt.framework.core.config.ClientConfig;
 import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
 import top.re1ife.vekt.framework.core.filter.client.IClientFilter;
 import top.re1ife.vekt.framework.core.proxy.jdk.JDKProxyFactory;
@@ -64,11 +65,15 @@ public class Client {
     @Getter
     private Bootstrap bootstrap = new Bootstrap();
 
+
+    public RpcReference initClientApplication() throws Exception {
+        return initClientApplication(PropertiesBootstrap.loadClientConfigFromLocal());
+    }
     /**
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
      *  最后有一个异步线程将发送队列内部的数据一个个地发送到服务端，并且等待服务端响应对应的数据结果
      */
-    public RpcReference initClientApplication() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public RpcReference initClientApplication(ClientConfig clientConfig) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
@@ -91,7 +96,7 @@ public class Client {
         vektRpcListenerLoader = new VektRpcListenerLoader();
         vektRpcListenerLoader.init();
 
-        CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
+        CLIENT_CONFIG = clientConfig;
         this.initConfig();
         RpcReference rpcReference = null;
         if("javassist".equals(CLIENT_CONFIG.getProxyType())){
@@ -101,12 +106,6 @@ public class Client {
         }
         return  rpcReference;
 
-//        //常规连接Netty服务端
-//        ChannelFuture channelFuture = bootstrap.connect(clientConfig.getServerAddr(),clientConfig.getPort());
-//        logger.info("client start!");
-//        this.startClient(channelFuture);
-//        RpcReference reference = new RpcReference(new JDKProxyFactory());
-//        return reference;
     }
 
     public void doSubscribeService(Class serviceBean){
@@ -163,19 +162,22 @@ public class Client {
         @Override
         public void run() {
             logger.info("Send Thread Start");
+            RpcInvocation rpcInvocation = null;
             while(true){
                 try {
                     //阻塞模式
-                    RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
+                    rpcInvocation = CommonClientCache.SEND_QUEUE.take();
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(rpcInvocation);
                     //判断channel是否已经中断
                     if (channelFuture.channel().isOpen()) {
                         //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
-                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
+                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(rpcInvocation));
                         channelFuture.channel().writeAndFlush(rpcProtocol);
                     }
                 } catch (Exception e) {
                     logger.error("client call error", e);
+                    rpcInvocation.setE(e);
+                    RESP_MAP.put(rpcInvocation.getUuid(), rpcInvocation);
                 }
             }
         }
@@ -190,21 +192,7 @@ public class Client {
         asyncSendJob.start();
     }
 
-//    public static void main(String[] args) throws Throwable {
-//        Client client = new Client();
-//        RpcReference reference = client.initClientApplication();
-//        client.initConfig();
-//
-//        DataService dataService = reference.get(DataService.class);
-//        client.doSubscribeService(DataService.class);
-//        ConnectionHandler.setBootstrap(client.getBootstrap());
-//        client.doConnectServer();
-//        client.startClient();
-//        for(int i = 0; i < 100;i++){
-//            String result = dataService.sendData("top.re1ife.vekt.framework.core.filter.client.IClientFilter");
-//            System.out.println(Thread.currentThread() + ": " + result);
-//        }
-//    }
+
 
     private void initConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         //初始化路由策略

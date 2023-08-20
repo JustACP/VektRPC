@@ -209,17 +209,11 @@ public class Server {
         SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
     }
 
-//    public static void main(String[] args) throws InterruptedException {
-//        Server server = new Server();
-//        server.initServerConfig();
-//        vektRpcListenerLoader = new VektRpcListenerLoader();
-//        vektRpcListenerLoader.init();
-//        server.exportService(new ServiceWrapper(new DataServiceImpl()));
-//        server.exportService(new ServiceWrapper(new UserServiceImpl()));
-//         server.startApplication();
-//        //注册destroy钩子函数
-//        ApplicationShutdownHook.registryShutdownHook();
-//    }
+
+    public ServerConfig getConfig(){
+        return SERVER_CONFIG;
+    }
+
 
 
 
