@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class NacosClient extends AbstractNacosClient {
@@ -76,17 +77,31 @@ public class NacosClient extends AbstractNacosClient {
 
     @Override
     public void registerInstance(String serviceName, String groupName, String ip, int port){
+        registerInstance(serviceName,groupName,ip,port,null);
+    }
+
+
+    public void registerInstance(String serviceName, String groupName, String ip, int port, Map<String,String> metadata){
+        Instance instance = new Instance();
+        instance.setIp(ip);
+        instance.setPort(port);
+        instance.setServiceName(serviceName);
+        instance.setMetadata(metadata);
         try {
-            namingService.registerInstance(serviceName, groupName, ip, port);
+            namingService.registerInstance(serviceName,groupName ,instance);
         } catch (NacosException e) {
             logger.error("NacosClient#registerInstace: serviceName: {} groupName: {} ip: {} port: {} register instance error", serviceName, groupName, ip, port);
             throw new RuntimeException(e);
         }
     }
-
     @Override
     public void registerInstance(String serviceName, String ip, int port){
         registerInstance(serviceName, NacosConstant.DEFAULT_GROUP_NAME , ip, port);
+    }
+
+    @Override
+    public void registerInstance(String serviceName, String ip, int port, Map<String, String> metadata){
+        registerInstance(serviceName, NacosConstant.DEFAULT_GROUP_NAME , ip, port, metadata);
     }
 
     @Override

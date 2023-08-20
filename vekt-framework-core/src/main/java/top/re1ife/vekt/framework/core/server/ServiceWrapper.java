@@ -34,4 +34,9 @@ public class ServiceWrapper {
     public ServiceWrapper(Object serverObj) {
         this.serverObj = serverObj;
     }
+
+    public ServiceWrapper(Object serverObj, String serviceToken) {
+        this.serverObj = serverObj;
+        this.serviceToken = serviceToken;
+    }
 }

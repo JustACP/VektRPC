@@ -3,22 +3,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>top.re1ife</groupId>
+        <artifactId>VektRPC</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
 
-    <groupId>top.re1ife</groupId>
-    <artifactId>VektRPC</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <modules>
-        <module>vekt-framework-interface</module>
-        <module>vekt-framework-core</module>
-        <module>vekt-framework-jmh</module>
-        <module>vekt-framework-provider</module>
-        <module>vekt-framework-consumer</module>
-    </modules>
+
+    <artifactId>vekt-framework-provider</artifactId>
+
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>top.re1ife</groupId>
+            <artifactId>vekt-framework-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -14,7 +14,7 @@ public class ChannelFuturePollingRef {
 
     private AtomicLong referenceTimes = new AtomicLong(0);
 
-    public ChannelFutureWrapper getChannelFutureWrap(String serviceName){
+    public ChannelFutureWrapper getChannelFutureWrapper(String serviceName){
         ChannelFutureWrapper[] channelFutureWrappers = SERVICE_ROUTER_MAP.get(serviceName);
 
         //自增取余数 顺序便利
@@ -23,7 +23,7 @@ public class ChannelFuturePollingRef {
         return channelFutureWrappers[index];
     }
 
-    public ChannelFutureWrapper getChannelFutureWrap(ChannelFutureWrapper[] channelFutureWrappers){
+    public ChannelFutureWrapper getChannelFutureWrapper(ChannelFutureWrapper[] channelFutureWrappers){
 
         //自增取余数 顺序便利
         long i = referenceTimes.getAndIncrement();

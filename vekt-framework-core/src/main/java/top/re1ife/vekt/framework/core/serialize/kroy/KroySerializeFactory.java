@@ -1,4 +1,4 @@
-package top.re1ife.vekt.framework.core.serialize.kryo;
+package top.re1ife.vekt.framework.core.serialize.kroy;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -8,7 +8,7 @@ import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-public class KryoSerializeFactory implements SerializeFactory {
+public class KroySerializeFactory implements SerializeFactory {
     /**
     * 由于 Kryo 不是线程安全的，并且构建和配置 Kryo 实例的成本相对较高，因此在多线程环境中可能会考虑使用 ThreadLocal 或池化。
     */

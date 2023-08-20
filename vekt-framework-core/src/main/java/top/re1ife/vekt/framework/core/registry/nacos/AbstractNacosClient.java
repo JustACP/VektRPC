@@ -4,6 +4,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractNacosClient {
 
@@ -33,6 +34,8 @@ public abstract class AbstractNacosClient {
     public abstract List<Instance> getAllServiceInstance(String serviceName, String groupName);
 
     public abstract void registerInstance(String serviceName, String groupName, String ip, int port);
+
+    public abstract void registerInstance(String serviceName, String ip, int port, Map<String, String> metadata);
 
     public abstract void deregisterInstance(String serviceName, String groupName, String ip, int port);
 

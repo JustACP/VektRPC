@@ -41,5 +41,5 @@ public abstract class AbstractRegister implements RegistryService {
      */
     public abstract List<String> getProviderIps(String serviceName);
 
-    public abstract Map<String, Double> getServiceWeightMap(String serviceName);
+    public abstract Map<String, String> getServiceWeightMap(String serviceName);
 }

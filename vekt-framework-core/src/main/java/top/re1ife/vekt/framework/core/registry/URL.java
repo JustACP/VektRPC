@@ -1,5 +1,6 @@
 package top.re1ife.vekt.framework.core.registry;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import io.netty.util.internal.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,6 +11,8 @@ import top.re1ife.vekt.framework.core.registry.nacos.ProviderNodeInfo;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.SERVER_CONFIG;
 
 @Data
 @AllArgsConstructor
@@ -22,7 +25,7 @@ public class URL {
     private String applicationName;
 
     /**
-     * 注册节点的服务名称 cn.onenine.irpc.test.UserService
+     * 注册节点的服务名称 cn.onenine.irpc.top.re1ife.vekt.framework.core.filter.client.IClientFilter.UserService
      */
     private String serviceName;
 
@@ -54,6 +57,12 @@ public class URL {
                 url.getServiceName() + ";" + url.getGroupName() +";"+ url.getHostIp() + ":" + url.getPort() + ";" +
                 System.currentTimeMillis() + ";" + url.getParameters().get("group")).getBytes(), StandardCharsets.UTF_8);
     }
+    public static String buildProviderUrlStr(URL url, Double weight) {
+
+        return new String((url.getApplicationName() + ";" +
+                url.getServiceName() + ";" + url.getGroupName() +";"+ url.getHostIp() + ":" + url.getPort() + ";" +
+                System.currentTimeMillis() + ";" + url.getParameters().get("group") +";"+weight).getBytes(), StandardCharsets.UTF_8);
+    }
 
     public String getHostIp(){
         return parameters.get("host");
@@ -71,6 +80,11 @@ public class URL {
         return groupName;
     }
 
+    public static double getUrlWeight(String providerUrlStr){
+        String[] items = providerUrlStr.split(";");
+        return Double.parseDouble(items[6]);
+    }
+
     /**
      * 将URL转换为写入consumer下的一段字符串
      *
@@ -86,6 +100,15 @@ public class URL {
         }
     }
 
+    public static String buildProviderStrFromInstance(Instance instance){
+        Map<String,String> map = new HashMap<>();
+        map.put("host", instance.getIp());
+        map.put("port", String.valueOf(instance.getPort()));
+        map.put("group",instance.getMetadata().get("group"));
+        URL url = new URL(instance.getMetadata().get("application"), instance.getServiceName(), NacosConstant.DEFAULT_GROUP_NAME ,map);
+        return buildProviderUrlStr(url, instance.getWeight());
+    }
+
     /**
      * 将某个节点下的信息转换为一个Provider节点对象
      */
@@ -95,7 +118,8 @@ public class URL {
         providerNodeInfo.setServiceName(items[1]);
         providerNodeInfo.setGroupName(items[2]);
         providerNodeInfo.setAddress(items[3]);
-        providerNodeInfo.setGroup(items[4]);
+        providerNodeInfo.setGroup(items[5]);
+        providerNodeInfo.setWeight(Double.parseDouble(items[6]));
         return providerNodeInfo;
     }
 

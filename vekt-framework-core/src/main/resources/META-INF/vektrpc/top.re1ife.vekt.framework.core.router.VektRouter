@@ -1,0 +1,2 @@
+rotate=top.re1ife.vekt.framework.core.router.RotateRouterImpl
+random=top.re1ife.vekt.framework.core.router.RandomRouterImpl

@@ -8,7 +8,7 @@ import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import java.util.Iterator;
 import java.util.List;
 
-public class DirectInvocationFilterImpl implements IClientFilter {
+public class DirectInvokeFilterImpl implements IClientFilter {
     @Override
     public void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation) {
         String url = (String) rpcInvocation.getAttachments().get("url");

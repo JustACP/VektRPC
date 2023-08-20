@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *  *  只会对类进行初始化，但不会类创建实例，创建实例的操作交给调用方
  */
 public class ExtensionLoader {
-    public static String EXTENSION_LOADER_DIR_PREFIX = "MATE-INF/vektrpc/";
+    public static String EXTENSION_LOADER_DIR_PREFIX = "META-INF/vektrpc/";
 
 
     public static Map<String, LinkedHashMap<String, Class>> EXTENSION_LOADER_CLASS_CACHE = new ConcurrentHashMap<>();

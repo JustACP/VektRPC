@@ -1,5 +1,6 @@
 package top.re1ife.vekt.framework.core.server;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -7,6 +8,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.core.common.RpcDecoder;
@@ -16,34 +18,38 @@ import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
+import top.re1ife.vekt.framework.core.filter.server.IServerFilter;
+import top.re1ife.vekt.framework.core.filter.server.ServerFilterChain;
 import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
+import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
+import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.kroy.KroySerializeFactory;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.*;
 import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
+import static top.re1ife.vekt.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 public class Server {
     private static EventLoopGroup bossGroup = null;
     private static EventLoopGroup wokrerGroup = null;
 
+    private ServerHandler serverHandler;
+
     private Logger logger = LoggerFactory.getLogger(Server.class);
 
-    private ServerConfig serverConfig;
+
 
     private static VektRpcListenerLoader vektRpcListenerLoader;
 
-    public ServerConfig getServerConfig() {
-        return serverConfig;
-    }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
-    }
 
     public void startApplication() throws InterruptedException {
         bossGroup = new NioEventLoopGroup();
@@ -64,19 +70,20 @@ public class Server {
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
 
+
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel socketChannel) throws Exception {
                 logger.info("Server Init Provider");
                 socketChannel.pipeline().addLast(new RpcEncoder())
                         .addLast(new RpcDecoder())
-                        .addLast(new ServerHandler());
+                        .addLast( new ServerHandler());
             }
         });
 
         this.batchExportUrl();
 
-        bootstrap.bind(serverConfig.getPort()).sync();
+        bootstrap.bind(SERVER_CONFIG.getPort()).sync();
     }
 
 
@@ -96,7 +103,16 @@ public class Server {
         }
 
         if(REGISTRY_SERVICE == null){
-            REGISTRY_SERVICE = new NacosRegister(serverConfig.getRegisterAddr());
+            try{
+                //使用自定义的SPI机制加载配置
+                EXTENSION_LOADER.loadExtension(RegistryService.class);
+                LinkedHashMap<String, Class> registerClassMap = EXTENSION_LOADER_CLASS_CACHE.get(RegistryService.class.getName());
+                Class registerClass = registerClassMap.get(SERVER_CONFIG.getRegisterType());
+                //实例化SPI对象
+                REGISTRY_SERVICE = (AbstractRegister) registerClass.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("registryServiceType unKnow, error is ", e);
+            }
         }
 
         Class<?> interfaceClass = classes[0];
@@ -104,11 +120,17 @@ public class Server {
         PROVIDER_CLASS_MAP.put(interfaceClass.getName(),serviceBean);
         URL url = new URL();
         url.setServiceName(interfaceClass.getName());
+        url.setApplicationName(SERVER_CONFIG.getApplicationName());
         url.setGroupName(NacosConstant.DEFAULT_GROUP_NAME);
         url.addParameter("host", CommonUtils.getIpAddress());
-        url.addParameter("port", String.valueOf(serverConfig.getPort()));
+        url.addParameter("port", String.valueOf(SERVER_CONFIG.getPort()));
         url.addParameter("group", serviceWrapper.getGroupName());
+        url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
+        url.addParameter("application", SERVER_CONFIG.getApplicationName());
         PROVIDER_URL_SET.add(url);
+        if (StringUtils.isNotBlank(serviceWrapper.getServiceToken())){
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(),serviceWrapper);
+        }
     }
 
     /**
@@ -129,41 +151,45 @@ public class Server {
         task.start();
     }
 
-    public void initServerConfig(){
-        ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
-        this.setServerConfig(serverConfig);
-
-        String serverSerialize = serverConfig.getServerSerializeType();
-        switch (serverSerialize){
-            case JDK_SERIALIZE_TYPE :
-                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case HESSIAN2_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            case KRYO_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for " +serverSerialize);
+    public void initServerConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        SERVER_CONFIG = PropertiesBootstrap.loadServerConfigFromLocal();
+        //初始化线程池和队列配置
+        SERVER_CHANNEL_DISPATCHER.init(SERVER_CONFIG.getServerQueueSize(), SERVER_CONFIG.getServerBizThreadNums());
+        //初始化序列化方式
+        EXTENSION_LOADER.loadExtension(SerializeFactory.class);
+        String serializeType = SERVER_CONFIG.getServerSerializeType();
+        LinkedHashMap<String, Class> serializeTypeMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
+        Class serializeClass = serializeTypeMap.get(serializeType);
+        if (serializeClass == null) {
+            throw new RuntimeException("no match serialize type for " + serializeType);
         }
-        logger.info("serverSerialize is {}" ,serverSerialize);
+        SERVER_SERIALIZE_FACTORY = (SerializeFactory) serializeClass.newInstance();
+
+        //初始化过滤链
+        EXTENSION_LOADER.loadExtension(IServerFilter.class);
+        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        LinkedHashMap<String, Class> filterMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
+        for (String implClassName : filterMap.keySet()) {
+            Class filterClass = filterMap.get(implClassName);
+            if (filterClass == null) {
+                throw new NullPointerException("no match server filter for " + implClassName);
+            }
+            serverFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+        }
+        SERVER_FILTER_CHAIN = serverFilterChain;
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        Server server = new Server();
-        server.initServerConfig();
-        vektRpcListenerLoader = new VektRpcListenerLoader();
-        vektRpcListenerLoader.init();
-        server.exportService(new ServiceWrapper(new DataServiceImpl()));
-        server.exportService(new ServiceWrapper(new UserServiceImpl()));
-         server.startApplication();
-        //注册destroy钩子函数
-        ApplicationShutdownHook.registryShutdownHook();
-    }
+//    public static void main(String[] args) throws InterruptedException {
+//        Server server = new Server();
+//        server.initServerConfig();
+//        vektRpcListenerLoader = new VektRpcListenerLoader();
+//        vektRpcListenerLoader.init();
+//        server.exportService(new ServiceWrapper(new DataServiceImpl()));
+//        server.exportService(new ServiceWrapper(new UserServiceImpl()));
+//         server.startApplication();
+//        //注册destroy钩子函数
+//        ApplicationShutdownHook.registryShutdownHook();
+//    }
 
 
 

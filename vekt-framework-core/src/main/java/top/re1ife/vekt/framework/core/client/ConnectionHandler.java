@@ -1,9 +1,13 @@
 package top.re1ife.vekt.framework.core.client;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.shaded.com.google.common.collect.Lists;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import top.re1ife.vekt.framework.core.common.ChannelFutureWrapper;
+import top.re1ife.vekt.framework.core.common.RpcInvocation;
+import top.re1ife.vekt.framework.core.registry.URL;
+import top.re1ife.vekt.framework.core.registry.nacos.ProviderNodeInfo;
 import top.re1ife.vekt.framework.core.router.Selector;
 
 import java.util.ArrayList;
@@ -41,8 +45,10 @@ public class ConnectionHandler {
 
 
         //获取权重
-        Double weight = URL_MAP.get(serviceName).get(st.toString());
+        ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(URL_MAP.get(serviceName).get(st.toString()));
+        Double weight = providerNodeInfo.getWeight();
         channelFutureWrapper.setWeight(weight);
+        channelFutureWrapper.setGroup(providerNodeInfo.getGroup());
         SERVER_ADDRESS.add(st.toString());
 
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(serviceName);
@@ -53,7 +59,8 @@ public class ConnectionHandler {
         channelFutureWrappers.add(channelFutureWrapper);
         CONNECT_MAP.put(serviceName, channelFutureWrappers);
 
-        Selector selector = new Selector(serviceName);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(serviceName);
         VEKT_ROUTER.refreshRouterArr(selector);
     }
 
@@ -96,7 +103,9 @@ public class ConnectionHandler {
      */
     public static ChannelFuture getChannelFuture(String providerServiceName){
 
-        Selector selector = new Selector(providerServiceName);
+
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
         ChannelFutureWrapper channelFutureWrapper = VEKT_ROUTER.select(selector);
         if(channelFutureWrapper == null){
             String message = String.format("no service %s provider", providerServiceName);
@@ -104,6 +113,23 @@ public class ConnectionHandler {
         }
 
         return channelFutureWrapper.getChannelFuture();
+    }
+
+    public static ChannelFuture getChannelFuture(RpcInvocation rpcInvocation){
+        ChannelFutureWrapper[] channelFutureWrappers = SERVICE_ROUTER_MAP.get(rpcInvocation.getTargetServiceName());
+        if(channelFutureWrappers == null || channelFutureWrappers.length == 0){
+            throw new RuntimeException("no provider exist for " + rpcInvocation.getTargetServiceName());
+        }
+
+        ArrayList<ChannelFutureWrapper> wrapperArrayList = Lists.newArrayList(channelFutureWrappers);
+
+        //doFilter
+        CLIENT_FILTER_CHAIN.doFilter(wrapperArrayList, rpcInvocation);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(rpcInvocation.getTargetServiceName());
+        ChannelFutureWrapper[] channelFutureWrappersCopy = new ChannelFutureWrapper[wrapperArrayList.size()];
+        selector.setChannelFutureWrappers(wrapperArrayList.toArray(channelFutureWrappersCopy));
+        return VEKT_ROUTER.select(selector).getChannelFuture();
     }
 
 

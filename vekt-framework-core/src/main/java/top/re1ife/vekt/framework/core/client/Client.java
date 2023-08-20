@@ -9,7 +9,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
-import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.core.common.RpcDecoder;
@@ -20,7 +19,6 @@ import top.re1ife.vekt.framework.core.common.cache.CommonClientCache;
 import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
-import top.re1ife.vekt.framework.core.config.ClientConfig;
 import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
 import top.re1ife.vekt.framework.core.filter.client.IClientFilter;
 import top.re1ife.vekt.framework.core.proxy.jdk.JDKProxyFactory;
@@ -28,15 +26,8 @@ import top.re1ife.vekt.framework.core.registry.RegistryService;
 import top.re1ife.vekt.framework.core.registry.URL;
 import top.re1ife.vekt.framework.core.registry.nacos.AbstractRegister;
 import top.re1ife.vekt.framework.core.registry.nacos.NacosRegister;
-import top.re1ife.vekt.framework.core.router.RandomRouterImpl;
-import top.re1ife.vekt.framework.core.router.RotateRouterImpl;
 import top.re1ife.vekt.framework.core.router.VektRouter;
 import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
-import top.re1ife.vekt.framework.interfaces.DataService;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -44,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
-import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
 import static top.re1ife.vekt.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
@@ -73,7 +63,7 @@ public class Client {
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
      *  最后有一个异步线程将发送队列内部的数据一个个地发送到服务端，并且等待服务端响应对应的数据结果
      */
-    public RpcReference initClientApplication(){
+    public RpcReference initClientApplication() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
@@ -94,6 +84,7 @@ public class Client {
         vektRpcListenerLoader.init();
 
         CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
+        this.initConfig();
         RpcReference rpcReference = null;
         if("javassist".equals(CLIENT_CONFIG.getProxyType())){
 //            rpcReference = new RpcReference(new )
@@ -120,14 +111,14 @@ public class Client {
             } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-            abstractRegister = new NacosRegister(CLIENT_CONFIG.getRegisterAddr());
+
         }
 
         URL url = new URL();
         url.setApplicationName(CLIENT_CONFIG.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
-        Map<String, Double> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
+        Map<String, String> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
         URL_MAP.put(serviceBean.getName(), result);
         abstractRegister.subscribe(url);
     }
@@ -170,7 +161,7 @@ public class Client {
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
                     logger.info("data : {}",JSONObject.toJSONString(data));
                     RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
                     //发送数据
                     channelFuture.channel().writeAndFlush(rpcProtocol);
                     logger.info("Message Send Success!");
@@ -201,7 +192,7 @@ public class Client {
 //        client.doConnectServer();
 //        client.startClient();
 //        for(int i = 0; i < 100;i++){
-//            String result = dataService.sendData("test");
+//            String result = dataService.sendData("top.re1ife.vekt.framework.core.filter.client.IClientFilter");
 //            System.out.println(Thread.currentThread() + ": " + result);
 //        }
 //    }
@@ -210,11 +201,12 @@ public class Client {
         //初始化路由策略
         EXTENSION_LOADER.loadExtension(VektRouter.class);
         String routeStrategy = CLIENT_CONFIG.getRouterStrategy();
-        LinkedHashMap<String, Class> vektRouterMap = EXTENSION_LOADER_CLASS_CACHE.get(VektRouter.class);
+        LinkedHashMap<String, Class> vektRouterMap = EXTENSION_LOADER_CLASS_CACHE.get(VektRouter.class.getName());
         Class vektRouterClass = vektRouterMap.get(routeStrategy);
         if(vektRouterClass == null) {
             throw new RuntimeException("no match routerStrategy for " + routeStrategy);
         }
+        VEKT_ROUTER = (VektRouter) vektRouterClass.newInstance();
 
         //初次序列化方式
         EXTENSION_LOADER.loadExtension(SerializeFactory.class);
@@ -224,6 +216,7 @@ public class Client {
         if(serializeClass == null){
             throw new RuntimeException("no match serialize type for " + serializeType);
         }
+        CLIENT_SERIALIZE_FACTORY = (SerializeFactory) serializeClass.newInstance();
 
         //初始化过滤链
         EXTENSION_LOADER.loadExtension(IClientFilter.class);

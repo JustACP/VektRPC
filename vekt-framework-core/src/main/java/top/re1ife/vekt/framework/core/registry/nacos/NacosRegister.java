@@ -39,7 +39,7 @@ public class NacosRegister extends AbstractRegister implements RegistryService {
     @Override
     public void Register(URL url) {
         if(!this.nacosClient.existInstance(url.getServiceName(), url.getGroupName(), url.getHostIp(), url.getPort())){
-            nacosClient.registerInstance(url.getServiceName(), url.getHostIp(), url.getPort());
+            nacosClient.registerInstance(url.getServiceName(), url.getHostIp(), url.getPort(), url.getParameters());
         }
 
         super.Register(url);
@@ -107,13 +107,14 @@ public class NacosRegister extends AbstractRegister implements RegistryService {
     }
 
     @Override
-    public Map<String, Double> getServiceWeightMap(String serviceName) {
+    public Map<String, String> getServiceWeightMap(String serviceName) {
         List<Instance> allServiceInstance = nacosClient.getAllServiceInstance(serviceName);
         StringBuilder ipAndPortBuilder = new StringBuilder();
-        Map<String, Double> result = new HashMap<>();
+        Map<String, String> result = new HashMap<>();
         for (Instance instance : allServiceInstance) {
             ipAndPortBuilder.append(instance.getIp()).append(":").append(instance.getPort());
-            result.put(ipAndPortBuilder.toString(), instance.getWeight());
+
+            result.put(ipAndPortBuilder.toString(), URL.buildProviderStrFromInstance(instance));
             ipAndPortBuilder.delete(0, ipAndPortBuilder.length());
         }
 

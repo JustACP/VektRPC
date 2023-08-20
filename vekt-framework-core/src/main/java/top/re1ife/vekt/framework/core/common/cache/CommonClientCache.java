@@ -30,7 +30,7 @@ public class CommonClientCache {
     public static Map<String, EventListener> SERVICE_LISTENER = new ConcurrentHashMap<>();
 
 
-    public static Map<String, Map<String, Double>> URL_MAP = new ConcurrentHashMap<>();
+    public static Map<String, Map<String, String>> URL_MAP = new ConcurrentHashMap<>();
 
     public static Set<String> SERVER_ADDRESS = new HashSet<>();
 

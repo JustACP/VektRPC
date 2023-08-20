@@ -4,7 +4,7 @@ import top.re1ife.vekt.framework.core.serialize.SerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
-import top.re1ife.vekt.framework.core.serialize.kryo.KryoSerializeFactory;
+import top.re1ife.vekt.framework.core.serialize.kroy.KroySerializeFactory;
 import top.re1ife.vekt.framework.jmh.common.User;
 
 
@@ -43,7 +43,7 @@ public class SerializeByteSizeCompareTest {
         System.out.println("hessian serialize size is " + result.length);
     }
     public void kroySerializeSizeTest(){
-        SerializeFactory serializeFactory = new KryoSerializeFactory();
+        SerializeFactory serializeFactory = new KroySerializeFactory();
         User user = buildUserDefault();
         byte[] result = serializeFactory.serialize(user);
         System.out.println("kroy serialize size is " + result.length);
