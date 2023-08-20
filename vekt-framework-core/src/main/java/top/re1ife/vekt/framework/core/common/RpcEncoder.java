@@ -3,6 +3,7 @@ package top.re1ife.vekt.framework.core.common;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import top.re1ife.vekt.framework.core.common.constant.RpcConstants;
 
 /**
  * @author re1ife
@@ -16,5 +17,6 @@ public class RpcEncoder extends MessageToByteEncoder<RpcProtocol> {
         byteBuf.writeShort(rpcProtocol.getMagicNumber());
         byteBuf.writeInt(rpcProtocol.getContentLength());
         byteBuf.writeBytes(rpcProtocol.getContent());
+        byteBuf.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
     }
 }

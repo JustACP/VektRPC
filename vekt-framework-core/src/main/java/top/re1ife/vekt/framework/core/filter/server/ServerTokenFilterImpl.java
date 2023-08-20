@@ -2,10 +2,11 @@ package top.re1ife.vekt.framework.core.filter.server;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
+import top.re1ife.vekt.framework.core.common.annotations.SPI;
 import top.re1ife.vekt.framework.core.server.ServiceWrapper;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.PROVIDER_SERVICE_WRAPPER_MAP;
-
+@SPI("before")
 public class ServerTokenFilterImpl implements IServerFilter{
 
 

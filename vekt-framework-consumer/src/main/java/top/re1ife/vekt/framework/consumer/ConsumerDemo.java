@@ -28,7 +28,7 @@ public class ConsumerDemo {
             RpcReference rpcReference = client.initClientApplication();
             RpcReferenceWrapper<DataService> dataServiceReferenceWrapper = new RpcReferenceWrapper<>();
             dataServiceReferenceWrapper.setAimClass(DataService.class);
-            dataServiceReferenceWrapper.setAsync(false);
+            dataServiceReferenceWrapper.setAsync(true);
             dataServiceReferenceWrapper.setGroup("vekt_rpc");
             dataServiceReferenceWrapper.setToken("token-a");
             dataServiceReferenceWrapper.setTimeOut(Integer.parseInt(CLIENT_CONFIG.getCallTimeout()));

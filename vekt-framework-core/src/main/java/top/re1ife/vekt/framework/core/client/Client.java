@@ -2,12 +2,15 @@ package top.re1ife.vekt.framework.core.client;
 
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,7 @@ import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.common.RpcProtocol;
 import top.re1ife.vekt.framework.core.common.cache.CommonClientCache;
 import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
+import top.re1ife.vekt.framework.core.common.constant.RpcConstants;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.filter.client.ClientFilterChain;
@@ -35,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.*;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.DEFAULT_DECODE_CHAR;
 import static top.re1ife.vekt.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
@@ -71,6 +76,9 @@ public class Client {
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel socketChannel) throws Exception {
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                socketChannel.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(), delimiter));
+
                 //添加流水线那
                 socketChannel.pipeline()
                         .addLast(new RpcEncoder())
@@ -156,17 +164,18 @@ public class Client {
         public void run() {
             logger.info("Send Thread Start");
             while(true){
-                try{
+                try {
                     //阻塞模式
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
-                    logger.info("data : {}",JSONObject.toJSONString(data));
-                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
-                    //发送数据
-                    channelFuture.channel().writeAndFlush(rpcProtocol);
-                    logger.info("Message Send Success!");
+                    //判断channel是否已经中断
+                    if (channelFuture.channel().isOpen()) {
+                        //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
+                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
+                        channelFuture.channel().writeAndFlush(rpcProtocol);
+                    }
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    logger.error("client call error", e);
                 }
             }
         }

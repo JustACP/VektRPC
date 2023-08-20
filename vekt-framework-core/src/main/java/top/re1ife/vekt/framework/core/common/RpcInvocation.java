@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class RpcInvocation {
+public class RpcInvocation implements Serializable {
+
+    private static final long serialVersionUID = 4925694661803675105L;
+
     /**
      * 请求目标的方法 如getInfo
      */
@@ -40,9 +44,24 @@ public class RpcInvocation {
     private Object response;
 
     /**
+     * 异常堆栈
+     */
+    private Throwable e;
+
+    /**
+     * 重试机制
+     */
+    private int retry;
+
+    /**
      * 附加信息
      */
     private Map<String, Object> attachments = new ConcurrentHashMap<>();
+
+    public void clearRespAndError(){
+        this.e = null;
+        this.response=null;
+    }
 
     @Override
     public String toString() {

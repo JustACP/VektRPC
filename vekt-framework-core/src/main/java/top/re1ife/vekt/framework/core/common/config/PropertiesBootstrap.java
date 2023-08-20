@@ -6,6 +6,8 @@ import top.re1ife.vekt.framework.core.config.ServerConfig;
 import java.io.IOException;
 import java.util.Objects;
 
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.*;
+
 public class PropertiesBootstrap {
 
     private volatile boolean configIsReady;
@@ -32,6 +34,12 @@ public class PropertiesBootstrap {
 
     public static final String SERVER_BIZ_THREAD_NUMS = "vektrpc.server.biz_thread_nums";
 
+    public static final String SERVER_MAX_CONNECTION = "vektrpc.server.max.connection";
+
+    public static final String SERVER_MAX_DATA_SIZE = "vektrpc.server.max.data.size";
+
+    public static final String CLIENT_MAX_DATA_SIZE = "vektrpc.client.max.data.size";
+
 
     public static ServerConfig loadServerConfigFromLocal(){
         try{
@@ -48,7 +56,8 @@ public class PropertiesBootstrap {
         serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesInteger(SERVER_QUEUE_SIZE));
         serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesInteger(SERVER_BIZ_THREAD_NUMS));
-
+        serverConfig.setMaxConnections(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_CONNECTION,DEFAULT_MAX_CONNECTION_NUMS));
+        serverConfig.setMaxServerRequestData(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_DATA_SIZE,SERVER_DEFAULT_MSG_LENGTH));
         return serverConfig;
     }
 
@@ -67,6 +76,7 @@ public class PropertiesBootstrap {
         clientConfig.setRouterStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         clientConfig.setClientSerializeType(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
         clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
+        clientConfig.setMaxServerRespDataSize(PropertiesLoader.getPropertiesIntegerDefault(CLIENT_MAX_DATA_SIZE,CLIENT_DEFAULT_MSG_LENGTH));
         return clientConfig;
     }
 

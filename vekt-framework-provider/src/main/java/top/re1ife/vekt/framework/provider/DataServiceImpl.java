@@ -12,6 +12,7 @@ public class DataServiceImpl implements DataService {
     @Override
     public String sendData(String body) {
         logger.info("已收到参数长度 : {}", body.length());
+
         return "success";
     }
 

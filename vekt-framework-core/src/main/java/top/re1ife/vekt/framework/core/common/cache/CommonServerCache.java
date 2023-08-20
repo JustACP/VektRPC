@@ -1,5 +1,6 @@
 package top.re1ife.vekt.framework.core.common.cache;
 
+import top.re1ife.vekt.framework.core.common.ServerServiceSemaphoreWrapper;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
 import top.re1ife.vekt.framework.core.dispatcher.ServerChannelDispatcher;
 import top.re1ife.vekt.framework.core.filter.server.ServerFilterChain;
@@ -30,9 +31,14 @@ public class CommonServerCache {
     public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 
     /**
-     * 过滤器链
+     * 前置过滤器链
      */
-    public static ServerFilterChain SERVER_FILTER_CHAIN = new ServerFilterChain();
+    public static ServerFilterChain SERVER_BEFORE_FILTER_CHAIN = new ServerFilterChain();
+
+    /**
+     * 后置过滤器链
+     */
+    public static ServerFilterChain SERVER_AFTER_FILTER_CHAIN = new ServerFilterChain();
 
     /**
      * key：serviceName value：ServiceWrapper
@@ -47,4 +53,6 @@ public class CommonServerCache {
     public static ServerConfig SERVER_CONFIG;
 
     public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
+
+    public static final Map<String, ServerServiceSemaphoreWrapper> SERVER_SERVICE_SEMAPHORE_MAP = new ConcurrentHashMap<>(64);
 }

@@ -2,19 +2,25 @@ package top.re1ife.vekt.framework.core.server;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.re1ife.vekt.framework.core.common.RpcDecoder;
 import top.re1ife.vekt.framework.core.common.RpcEncoder;
+import top.re1ife.vekt.framework.core.common.ServerServiceSemaphoreWrapper;
+import top.re1ife.vekt.framework.core.common.annotations.SPI;
 import top.re1ife.vekt.framework.core.common.config.PropertiesBootstrap;
 import top.re1ife.vekt.framework.core.common.constant.NacosConstant;
+import top.re1ife.vekt.framework.core.common.constant.RpcConstants;
 import top.re1ife.vekt.framework.core.common.event.VektRpcListenerLoader;
 import top.re1ife.vekt.framework.core.common.utils.CommonUtils;
 import top.re1ife.vekt.framework.core.config.ServerConfig;
@@ -31,6 +37,7 @@ import top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory;
 import top.re1ife.vekt.framework.core.serialize.kroy.KroySerializeFactory;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.LinkedHashMap;
 
 import static top.re1ife.vekt.framework.core.common.cache.CommonServerCache.*;
@@ -42,6 +49,8 @@ public class Server {
     private static EventLoopGroup wokrerGroup = null;
 
     private ServerHandler serverHandler;
+
+    private MaxConnectionLimitHandler maxConnectionLimitHandler;
 
     private Logger logger = LoggerFactory.getLogger(Server.class);
 
@@ -70,19 +79,24 @@ public class Server {
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
 
+        maxConnectionLimitHandler = new MaxConnectionLimitHandler(SERVER_CONFIG.getMaxConnections());
+        bootstrap.handler(maxConnectionLimitHandler);
 
+        serverHandler = new ServerHandler();
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel socketChannel) throws Exception {
-                logger.info("Server Init Provider");
+                logger.info("初始化provider过程");
+                ByteBuf delimiter = Unpooled.copiedBuffer(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
+                socketChannel.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(), delimiter));
                 socketChannel.pipeline().addLast(new RpcEncoder())
                         .addLast(new RpcDecoder())
-                        .addLast( new ServerHandler());
+                        .addLast(serverHandler);
             }
         });
 
         this.batchExportUrl();
-
+        SERVER_CHANNEL_DISPATCHER.startDataConsume();
         bootstrap.bind(SERVER_CONFIG.getPort()).sync();
     }
 
@@ -117,7 +131,7 @@ public class Server {
 
         Class<?> interfaceClass = classes[0];
         //需要注册的对象统一放到一个Map集合中进行管理
-        PROVIDER_CLASS_MAP.put(interfaceClass.getName(),serviceBean);
+        PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
         URL url = new URL();
         url.setServiceName(interfaceClass.getName());
         url.setApplicationName(SERVER_CONFIG.getApplicationName());
@@ -127,6 +141,9 @@ public class Server {
         url.addParameter("group", serviceWrapper.getGroupName());
         url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
         url.addParameter("application", SERVER_CONFIG.getApplicationName());
+
+        //设置服务端的限流器
+        SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(),new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
         if (StringUtils.isNotBlank(serviceWrapper.getServiceToken())){
             PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(),serviceWrapper);
@@ -167,16 +184,29 @@ public class Server {
 
         //初始化过滤链
         EXTENSION_LOADER.loadExtension(IServerFilter.class);
-        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        ServerFilterChain serverBeforeFilterChain = new ServerFilterChain();
+        ServerFilterChain serverAfterFilterChain = new ServerFilterChain();
         LinkedHashMap<String, Class> filterMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
         for (String implClassName : filterMap.keySet()) {
             Class filterClass = filterMap.get(implClassName);
             if (filterClass == null) {
                 throw new NullPointerException("no match server filter for " + implClassName);
             }
-            serverFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            Annotation spiAnnotation = filterClass.getDeclaredAnnotation(SPI.class);
+            if (spiAnnotation == null) {
+                logger.warn("filter {}spi annotation is null ", filterClass.getName());
+                continue;
+            }
+            SPI spi = (SPI) spiAnnotation;
+            if("before".equals(spi.value())){
+                serverBeforeFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            }else if("after".equals(spi.value())){
+                serverAfterFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            }
+
         }
-        SERVER_FILTER_CHAIN = serverFilterChain;
+        SERVER_BEFORE_FILTER_CHAIN = serverBeforeFilterChain;
+        SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
     }
 
 //    public static void main(String[] args) throws InterruptedException {

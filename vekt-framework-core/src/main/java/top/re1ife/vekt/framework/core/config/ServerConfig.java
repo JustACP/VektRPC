@@ -30,4 +30,14 @@ public class ServerConfig {
      * 处理业务线程数
      */
     private Integer serverBizThreadNums;
+
+    /**
+     * 限制服务端最大所能接受的数据包体积
+     */
+    private Integer maxServerRequestData;
+
+    /**
+     * 服务端最大连接数
+     */
+    private Integer maxConnections;
 }
