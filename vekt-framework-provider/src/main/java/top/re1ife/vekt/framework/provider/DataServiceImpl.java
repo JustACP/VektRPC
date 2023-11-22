@@ -1,4 +1,4 @@
-package top.re1ife.vekt.framework.core.server;
+package top.re1ife.vekt.framework.provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +12,7 @@ public class DataServiceImpl implements DataService {
     @Override
     public String sendData(String body) {
         logger.info("已收到参数长度 : {}", body.length());
+
         return "success";
     }
 

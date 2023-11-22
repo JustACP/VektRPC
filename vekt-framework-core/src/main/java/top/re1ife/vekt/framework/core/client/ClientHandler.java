@@ -8,6 +8,7 @@ import io.netty.util.ReferenceCountUtil;
 import top.re1ife.vekt.framework.core.common.RpcInvocation;
 import top.re1ife.vekt.framework.core.common.RpcProtocol;
 
+import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
 import static top.re1ife.vekt.framework.core.common.cache.CommonClientCache.RESP_MAP;
 
 /**
@@ -22,8 +23,12 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg){
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
         byte[] reqContent = rpcProtocol.getContent();
-        String json = new String(reqContent, 0, reqContent.length);
-        RpcInvocation rpcInvocation = JSONObject.parseObject(json, RpcInvocation.class);
+        RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(reqContent, RpcInvocation.class);
+
+
+        if (rpcInvocation.getE() != null) {
+            rpcInvocation.getE().printStackTrace();
+        }
 
         //通过之前发送的uuid来注入匹配的响应数值
         if (!RESP_MAP.containsKey(rpcInvocation.getUuid())) {

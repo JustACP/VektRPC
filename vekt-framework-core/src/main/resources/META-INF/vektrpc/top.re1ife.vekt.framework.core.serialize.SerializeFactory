@@ -1,0 +1,4 @@
+fastJson=top.re1ife.vekt.framework.core.serialize.fastjson.FastJsonSerializeFactory
+hessian=top.re1ife.vekt.framework.core.serialize.hessian.HessianSerializeFactory
+jdk=top.re1ife.vekt.framework.core.serialize.jdk.JdkSerializeFactory
+kroy=top.re1ife.vekt.framework.core.serialize.kroy.KroySerializeFactory

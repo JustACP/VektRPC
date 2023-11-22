@@ -1,6 +1,5 @@
 package top.re1ife.vekt.framework.core.client;
 
-import top.re1ife.vekt.framework.core.common.RpcProtocol;
 import top.re1ife.vekt.framework.core.proxy.ProxyFactory;
 
 /**
@@ -18,7 +17,7 @@ public class RpcReference {
     /**
      * 根据接口类型获取代理对象
      */
-    public <T> T get(Class<T> tClass) throws Throwable {
-        return proxyFactory.getProxy(tClass);
+    public <T> T get(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
+        return proxyFactory.getProxy(rpcReferenceWrapper);
     }
 }

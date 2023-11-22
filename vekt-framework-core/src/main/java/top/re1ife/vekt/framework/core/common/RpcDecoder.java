@@ -4,9 +4,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import java.math.MathContext;
 import java.util.List;
 
-import static top.re1ife.vekt.framework.core.common.constants.RpcConstants.MAGIC_NUMBER;
+import static top.re1ife.vekt.framework.core.common.constant.RpcConstants.MAGIC_NUMBER;
 
 /**
  * RPC 解码器 所有数据都入站要过解码器
@@ -21,33 +22,24 @@ public class RpcDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
         if(byteBuf.readableBytes() >= BASE_LENGTH){
-            if(byteBuf.readableBytes() > 1000){
-                //防止收到体积郭大的数据包
-                byteBuf.skipBytes(byteBuf.readableBytes());
-            }
-            int beginReader;
 
-            while(true){
-                beginReader = byteBuf.readerIndex();
-                byteBuf.markReaderIndex();
-                if(byteBuf.readShort() == MAGIC_NUMBER){
-                    break;
-                }else{
-                    //如果不是魔数开头，说明是非法的客户端发来的数据包
-                    channelHandlerContext.close();
-                    return;
-                }
-            }
-
-            int contentLength = byteBuf.readInt();
-
-            if(byteBuf.readableBytes() < contentLength){
-                byteBuf.readerIndex(beginReader);
+            if((byteBuf.readShort() != MAGIC_NUMBER)){
+                channelHandlerContext.close();
                 return;
             }
 
+            int length = byteBuf.readInt();
+
+            //说明剩余的数据包不是完整的，这里需要重置下readerIndex
+            if (byteBuf.readableBytes() < length) {
+                channelHandlerContext.close();
+                return;
+            }
+
+
+
             //这里其实就是实际的RpcProtocol对象的content字段
-            byte[] data = new byte[contentLength];
+            byte[] data = new byte[length];
             byteBuf.readBytes(data);
             RpcProtocol rpcProtocol = new RpcProtocol(data);
             list.add(rpcProtocol);

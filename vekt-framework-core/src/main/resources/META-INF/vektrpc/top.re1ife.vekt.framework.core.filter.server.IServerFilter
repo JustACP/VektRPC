@@ -1,0 +1,2 @@
+logger=top.re1ife.vekt.framework.core.filter.server.ServerLogFilterImpl
+token=top.re1ife.vekt.framework.core.filter.server.ServerTokenFilterImpl

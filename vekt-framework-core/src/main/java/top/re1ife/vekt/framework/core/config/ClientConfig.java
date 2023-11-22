@@ -9,10 +9,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ClientConfig {
 
+    private String registerAddr;
 
-    private Integer port;
+    private String applicationName;
 
-    private String serverAddr;
+
+    private String proxyType;
+
+    private String callTimeout = "3000";
+
+    private String routerStrategy;
+
+    private String clientSerializeType;
+
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
+
+    /**
+     * 最大接收的server端响应数据大小
+     */
+    private Integer maxServerRespDataSize;
 
 
 
